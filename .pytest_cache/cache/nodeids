@@ -1,0 +1,4 @@
+[
+  "tests/test_whois_guardian.py::test_whois_guardian_initialization",
+  "tests/test_whois_guardian.py::test_whois_lookup"
+]
