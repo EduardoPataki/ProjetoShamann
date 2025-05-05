@@ -17,6 +17,7 @@ def main():
 
     try:
         # Initialize WhoisGuardian
+        # Teste commiti github
         guardian = WhoisGuardian()
 
         # Add your main application logic here
