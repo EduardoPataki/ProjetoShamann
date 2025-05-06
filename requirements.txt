@@ -1,15 +1,21 @@
+# Project Dependencies
+typer # Adicionado para a interface de linha de comando
+python-whois==0.9.5
+python-dateutil==2.9.0.post0
+dnspython # Certifique-se que está presente se for usado pelo whois
+urllib3 # Certifique-se que está presente se for usado por dependencias e sem restrição de versão
+
+# Development/Linting/Formatting Dependencies (Opcional, mas recomendado)
 astroid==3.3.9
 autopep8==2.0.4
 docstring-to-markdown==0.17
 flake8==7.1.2
 isort==6.0.1
-packaging==25.0
+packaging==25.0 # Pode ser uma dependência de outras libs, bom ter
 pycodestyle==2.12.1
 pydocstyle==6.3.0
 pyflakes==3.2.0
 pylint==3.3.7
-python-dateutil==2.9.0.post0
-python-whois==0.9.5
-six==1.17.0
-typing_extensions==4.13.2
-zipp==3.21.0
+six==1.17.0 # Pode ser uma dependência de outras libs, bom ter
+typing_extensions==4.13.2 # Pode ser uma dependência de outras libs, bom ter
+zipp==3.21.0 # Pode ser uma dependência de outras libs, bom ter
