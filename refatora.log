@@ -1,0 +1,29 @@
+2025-05-06 09:55:33,820 - INFO - Iniciando refatoração do Shamann...
+2025-05-06 09:55:33,821 - INFO - Verificando ambiente Kali...
+2025-05-06 09:55:33,848 - INFO - ✅ Ambiente Kali OK
+2025-05-06 09:55:33,849 - INFO - Criando estrutura profissional...
+2025-05-06 09:55:33,850 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/config/settings.py
+2025-05-06 09:55:33,851 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/config/tools.conf
+2025-05-06 09:55:33,874 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/core/logger.py
+2025-05-06 09:55:33,874 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/core/security.py
+2025-05-06 09:55:33,875 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/modules/recon/__init__.py
+2025-05-06 09:55:33,876 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/modules/recon/whois.py
+2025-05-06 09:55:33,877 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/modules/recon/nmap.py
+2025-05-06 09:55:33,877 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/modules/recon/dns.py
+2025-05-06 09:55:33,878 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/cli/__init__.py
+2025-05-06 09:55:33,882 - INFO - FILE: /home/h4ck3r/Projetos/shamann/shamann/cli/main.py
+2025-05-06 09:55:33,898 - INFO - FILE: /home/h4ck3r/Projetos/shamann/tests/__init__.py
+2025-05-06 09:55:33,901 - INFO - FILE: /home/h4ck3r/Projetos/shamann/tests/test_whois.py
+2025-05-06 09:55:33,901 - INFO - Migrando arquivos...
+2025-05-06 09:55:33,902 - WARNING - Arquivo origem não encontrado: /home/h4ck3r/Projetos/shamann/config/settings.py
+2025-05-06 09:55:33,902 - WARNING - Arquivo origem não encontrado: /home/h4ck3r/Projetos/shamann/core/logger.py
+2025-05-06 09:55:33,902 - WARNING - Arquivo origem não encontrado: /home/h4ck3r/Projetos/shamann/modules/whois_guardian.py
+2025-05-06 09:55:33,903 - WARNING - Arquivo origem não encontrado: /home/h4ck3r/Projetos/shamann/main.py
+2025-05-06 09:55:33,903 - INFO - Limpando estrutura antiga...
+2025-05-06 09:55:33,905 - INFO - REMOVED: /home/h4ck3r/Projetos/shamann/venv
+2025-05-06 09:55:33,907 - INFO - 
+🎉 Refatoração concluída com sucesso!
+2025-05-06 09:55:33,908 - INFO - Próximos passos:
+2025-05-06 09:55:33,908 - INFO - 1. Instale o projeto: pip install -e .
+2025-05-06 09:55:33,908 - INFO - 2. Execute: python -m shamann.cli.main --help
+2025-05-06 09:55:33,908 - INFO - 3. Remova este script: rm refatora_projeto.py

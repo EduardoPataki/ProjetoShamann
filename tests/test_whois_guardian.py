@@ -1,14 +1,7 @@
 # tests/test_whois_guardian.py
-import pytest
-from modules.whois_guardian import WhoisGuardian
 
-def test_whois_guardian_initialization():
-    guardian = WhoisGuardian()
-    assert guardian is not None
+from shamann.modules.whois_guardian import perform_whois_lookup
 
-def test_whois_lookup():
-    guardian = WhoisGuardian()
-    # Add your test cases here
-    pass
-
-# Add more test cases as needed
+def test_perform_whois_lookup():
+    result = perform_whois_lookup("example.com")
+    assert "domain" in result.lower() or "name" in result.lower()
