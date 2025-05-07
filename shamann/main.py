@@ -11,30 +11,32 @@ import json # Adicionado para imprimir resultados formatados
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 if project_root not in sys.path:
      # sys.path.append(project_root) # Comentado, pois python -m deve gerenciar isso
+     pass # Explicitamente não fazer nada se o caminho não for adicionado
 
 # Tentar importar os módulos guardiões
 # Se um guardião falhar ao importar, o valor correspondente na hierarquia será None
-nmap_guardian = None
+
 try:
     from shamann.modules import nmap_guardian
 except ImportError as e:
     print(f"Erro: Não foi possível importar o módulo nmap_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
-    # sys.exit(1) # Não sair se apenas um guardião falhar
+    nmap_guardian = None # Atribuir None aqui se a importação falhar
 
-whois_guardian = None
+
 try:
     from shamann.modules import whois_guardian
 except ImportError as e:
      # Este erro deve ter sido resolvido, mas mantemos a proteção
     print(f"Erro: Não foi possível importar o módulo whois_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
-    # sys.exit(1) # Não sair se apenas um guardião falhar
+    whois_guardian = None # Atribuir None aqui se a importação falhar
+
 
 # TODO: Importar outros Guardiões aqui
-dirb_guardian = None # Definir como None por padrão
 try:
     from shamann.modules import dirb_guardian # Importar o novo Guardião Dirb
 except ImportError as e:
     print(f"Erro: Não foi possível importar o módulo dirb_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
+    dirb_guardian = None # Atribuir None aqui se a importação falhar
 
 
 app = typer.Typer()
@@ -46,10 +48,11 @@ app = typer.Typer()
 # ou None se o Guardião não pôde ser importado.
 guardians_map = {
     # Verifica se o módulo importou E se a classe/função esperada existe nele
-    "nmap": nmap_guardian.NmapGuardian.run_scan if (nmap_guardian and hasattr(nmap_guardian, 'NmapGuardian') and hasattr(nmap_guardian.NmapGuardian, 'run_scan')) else None,
-    "whois": whois_guardian.WhoisGuardian.run_query if (whois_guardian and hasattr(whois_guardian, 'WhoisGuardian') and hasattr(whois_guardian.WhoisGuardian, 'run_query')) else None,
+    # Acesso seguro usando getattr e operador ternário
+    "nmap": getattr(nmap_guardian, 'NmapGuardian', None) and getattr(nmap_guardian.NmapGuardian, 'run_scan', None),
+    "whois": getattr(whois_guardian, 'WhoisGuardian', None) and getattr(whois_guardian.WhoisGuardian, 'run_query', None),
     # TODO: Adicionar outros Guardiões ao mapa aqui
-    "dirb": dirb_guardian.DirbGuardian.run_scan if (dirb_guardian and hasattr(dirb_guardian, 'DirbGuardian') and hasattr(dirb_guardian.DirbGuardian, 'run_scan')) else None, # Adicionado Dirb
+    "dirb": getattr(dirb_guardian, 'DirbGuardian', None) and getattr(dirb_guardian.DirbGuardian, 'run_scan', None), # Adicionado Dirb
 }
 
 def execute_guardian_scan(guardian_name: str, target: str, options: str = ""):
@@ -60,13 +63,21 @@ def execute_guardian_scan(guardian_name: str, target: str, options: str = ""):
 
     if guardian_function is None:
         # Verifica qual guardião específico falhou a importação ou não existe
+        # Melhorar a verificação para ser mais genérica se possível
         if guardian_name == "nmap" and nmap_guardian is None:
-             print(f"NmapGuardian não disponível. Não foi possível executar o scan Nmap.")
+             print(f"NmapGuardian não disponível (erro de importação). Não foi possível executar o scan Nmap.")
         elif guardian_name == "whois" and whois_guardian is None:
-             print(f"WhoisGuardian não disponível. Não foi possível executar o scan WHOIS.")
+             print(f"WhoisGuardian não disponível (erro de importação). Não foi possível executar o scan WHOIS.")
         # TODO: Adicionar checks para outros Guardiões aqui
         elif guardian_name == "dirb" and dirb_guardian is None: # Adicionado check para Dirb
-             print(f"DirbGuardian não disponível. Não foi possível executar o scan Dirb.")
+             print(f"DirbGuardian não disponível (erro de importação). Não foi possível executar o scan Dirb.")
+        # Verifica se o módulo importou mas a classe/função esperada não foi encontrada
+        elif guardian_name == "nmap" and not getattr(nmap_guardian, 'NmapGuardian', None):
+             print(f"NmapGuardian indisponível (Classe NmapGuardian ou função run_scan não encontrada).")
+        elif guardian_name == "whois" and not getattr(whois_guardian, 'WhoisGuardian', None):
+             print(f"WhoisGuardian indisponível (Classe WhoisGuardian ou função run_query não encontrada).")
+        elif guardian_name == "dirb" and not getattr(dirb_guardian, 'DirbGuardian', None):
+             print(f"DirbGuardian indisponível (Classe DirbGuardian ou função run_scan não encontrada).")
         else:
              print(f"Guardião desconhecido ou indisponível: {guardian_name}")
              print("Verifique se o módulo do Guardião foi importado corretamente e se a função 'run_scan' (ou equivalente) existe.")
