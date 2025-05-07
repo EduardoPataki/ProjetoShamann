@@ -2,8 +2,7 @@
 
 import subprocess
 import sys
-
-# Note: json import is not needed if not parsing/formatting output here
+import json # Adicionado para lidar com a saída, embora dirb não seja json
 
 class DirbGuardian:
     """
@@ -29,26 +28,30 @@ class DirbGuardian:
         print(f"DEBUG: Executando comando Dirb: {' '.join(command)}")
 
         try:
-            # Executa o comando Dirb SEM capturar a saída.
-            # A saída do Dirb aparecerá diretamente no terminal.
-            # check=False para não levantar exceção em erro
-            # text=True (ou encoding='utf-8') ainda útil para subprocess
-            process = subprocess.run(command, check=False, text=True) # Removido capture_output=True
+            # Executa o comando Dirb CAPTURANDO a saída novamente, mas adicionando um timeout
+            # O timeout impede que o script trave indefinidamente se o Dirb travar com a captura.
+            # Ajuste o valor do timeout conforme necessário (em segundos).
+            timeout_seconds = 300 # 5 minutos de timeout
 
-            # stdout e stderr serão None aqui, pois não foram capturados.
-            # Podemos imprimir uma mensagem indicando isso.
-            print("\nDEBUG: Saída do Dirb apareceu diretamente no terminal (capture_output=False).")
+            process = subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout_seconds) # Adicionado timeout
 
+            stdout = process.stdout
+            stderr = process.stderr
             returncode = process.returncode
 
+            print("DEBUG: Resultado bruto do Dirb (primeiros 200 chars):", stdout[:200])
+            print("DEBUG: Erro bruto do Dirb (se houver, primeiros 200 chars):", stderr[:200])
+
+
             # TODO: Implementar o parsing real da saída do Dirb aqui
-            # Parsing da saída *não é possível* neste modo, pois não capturamos.
-            # Retornamos um dicionário básico indicando que rodou.
+            # Parsing agora é possível porque a saída é capturada novamente.
             parsed_data = {
                 "target": target,
                 "options": options,
-                "note": "Saída bruta do Dirb não capturada neste modo de teste.",
-                "returncode_dirb": returncode,
+                "stdout_summary": stdout.splitlines()[:10], # Primeiras 10 linhas do stdout
+                "stderr_summary": stderr.splitlines()[:10], # Primeiras 10 linhas do stderr
+                 # Você precisará analisar o 'stdout' para extrair os diretórios/arquivos encontrados
+                "files_found_count": stdout.count('+'), # Contagem simples baseada em '+ ' nas linhas de saída
             }
 
 
@@ -56,8 +59,8 @@ class DirbGuardian:
                 "target": target,
                 "options": options,
                 "command_executed": ' '.join(command),
-                "stdout": None, # Não capturado
-                "stderr": None, # Não capturado
+                "stdout": stdout,
+                "stderr": stderr,
                 "returncode": returncode,
                 "status": "completed" if returncode == 0 else "error",
                 "parsed_data": parsed_data
@@ -66,6 +69,17 @@ class DirbGuardian:
         except FileNotFoundError:
             print("Erro: O comando 'dirb' não foi encontrado. Certifique-se de que o Dirb está instalado e no PATH.")
             return {"target": target, "options": options, "command_executed": ' '.join(command), "status": "error", "error_message": "Comando Dirb não encontrado"}
+        except subprocess.TimeoutExpired:
+            print(f"Erro: O comando Dirb excedeu o tempo limite ({timeout_seconds} segundos). Ele pode ter travado ao capturar a saída.")
+            # Tenta retornar o output capturado até o timeout, se houver
+            # process.stdout e process.stderr podem estar disponíveis mesmo com TimeoutExpired
+            stdout_partial = process.stdout if 'process' in locals() else None
+            stderr_partial = process.stderr if 'process' in locals() else None
+            return {
+                "target": target, "options": options, "command_executed": ' '.join(command),
+                "status": "timeout_error", "error_message": "Comando Dirb excedeu o tempo limite.",
+                "stdout_partial": stdout_partial, "stderr_partial": stderr_partial
+            }
         except Exception as e:
             print(f"Ocorreu um erro ao executar o Dirb: {e}")
             return {"target": target, "options": options, "command_executed": ' '.join(command), "status": "error", "error_message": str(e)}
