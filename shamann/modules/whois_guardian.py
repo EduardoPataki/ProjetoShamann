@@ -4,8 +4,8 @@
 import subprocess
 import sys
 
-# Importar a biblioteca Whois real - IMPORT NO TOPO
-import pythonwhois # Certifique-se que 'python-whois' está no seu requirements.txt
+# Importar a biblioteca Whois real - IMPORT CORRIGIDA
+import whois # Importa a biblioteca usando o nome correto do módulo instalado
 
 class WhoisGuardian:
     """
@@ -24,8 +24,8 @@ class WhoisGuardian:
         # e que você rodou 'pip install -r requirements.txt'
 
         try:
-            # Use a biblioteca python-whois aqui
-            details = pythonwhois.get_whois(target)
+            # Use a biblioteca whois (agora importada corretamente) aqui
+            details = whois.get_whois(target)
             return {
                 "target": target,
                 "status": "completed",
@@ -44,3 +44,7 @@ class WhoisGuardian:
         #     "raw_whois_data": f"Resultados WHOIS simulados para {target}",
         #     "parsed_data": {"domain": target, "registrar": "Simulado"}
         # }
+
+# (Bloco __main__ comentado aqui)
+# if __name__ == "__main__":
+#    pass # Este guardião não é o ponto de entrada principal
