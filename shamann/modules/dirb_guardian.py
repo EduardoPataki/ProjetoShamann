@@ -2,7 +2,8 @@
 
 import subprocess
 import sys
-import json # Adicionado para lidar com a saída, embora dirb não seja json
+
+# Note: json import is not needed if not parsing/formatting output here
 
 class DirbGuardian:
     """
@@ -28,28 +29,26 @@ class DirbGuardian:
         print(f"DEBUG: Executando comando Dirb: {' '.join(command)}")
 
         try:
-            # Executa o comando Dirb
-            # capture_output=True captura stdout e stderr
-            # text=True (ou encoding='utf-8') garante que a saída seja string, não bytes
-            process = subprocess.run(command, capture_output=True, text=True, check=False) # check=False para não levantar exceção em erro
+            # Executa o comando Dirb SEM capturar a saída.
+            # A saída do Dirb aparecerá diretamente no terminal.
+            # check=False para não levantar exceção em erro
+            # text=True (ou encoding='utf-8') ainda útil para subprocess
+            process = subprocess.run(command, check=False, text=True) # Removido capture_output=True
 
-            stdout = process.stdout
-            stderr = process.stderr
+            # stdout e stderr serão None aqui, pois não foram capturados.
+            # Podemos imprimir uma mensagem indicando isso.
+            print("\nDEBUG: Saída do Dirb apareceu diretamente no terminal (capture_output=False).")
+
             returncode = process.returncode
 
-            print("DEBUG: Resultado bruto do Dirb (primeiros 200 chars):", stdout[:200])
-            print("DEBUG: Erro bruto do Dirb (se houver, primeiros 200 chars):", stderr[:200])
-
-
             # TODO: Implementar o parsing real da saída do Dirb aqui
-            # Por enquanto, o parsed_data será apenas um placeholder ou incluirá infos básicas
+            # Parsing da saída *não é possível* neste modo, pois não capturamos.
+            # Retornamos um dicionário básico indicando que rodou.
             parsed_data = {
                 "target": target,
                 "options": options,
-                "stdout_summary": stdout.splitlines()[:10], # Primeiras 10 linhas do stdout
-                "stderr_summary": stderr.splitlines()[:10], # Primeiras 10 linhas do stderr
-                 # Você precisará analisar o 'stdout' para extrair os diretórios/arquivos encontrados
-                "files_found_count": stdout.count('+'), # Contagem simples baseada em '+ ' nas linhas de saída
+                "note": "Saída bruta do Dirb não capturada neste modo de teste.",
+                "returncode_dirb": returncode,
             }
 
 
@@ -57,8 +56,8 @@ class DirbGuardian:
                 "target": target,
                 "options": options,
                 "command_executed": ' '.join(command),
-                "stdout": stdout,
-                "stderr": stderr,
+                "stdout": None, # Não capturado
+                "stderr": None, # Não capturado
                 "returncode": returncode,
                 "status": "completed" if returncode == 0 else "error",
                 "parsed_data": parsed_data
