@@ -2,7 +2,8 @@
 
 import subprocess
 import sys
-import json # Adicionado para lidar com a saída, embora dirb não seja json
+import os
+import json
 
 class DirbGuardian:
     """
@@ -27,16 +28,23 @@ class DirbGuardian:
 
         print(f"DEBUG: Executando comando Dirb: {' '.join(command)}")
 
+        # Usar Popen e communicate para ter mais controle sobre pipes,
+        # pode ajudar a evitar o travamento com capture_output=True
+        process = None # Inicializar process fora do try
+
         try:
-            # Executa o comando Dirb CAPTURANDO a saída novamente, mas adicionando um timeout
-            # O timeout impede que o script trave indefinidamente se o Dirb travar com a captura.
-            # Ajuste o valor do timeout conforme necessário (em segundos).
+            # Inicia o processo usando Popen
+            # stdout=subprocess.PIPE e stderr=subprocess.PIPE para capturar as saídas
+            # text=True (ou encoding='utf-8') para que communicate retorne strings
+            # bufsize=1 pode ajudar com buffering, mas nem sempre necessário
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+            # Comunica com o processo: envia None para stdin, lê stdout e stderr
+            # communicate() espera o processo terminar.
+            # Adicionar timeout também aqui para evitar travamento indefinido
             timeout_seconds = 300 # 5 minutos de timeout
+            stdout, stderr = process.communicate(timeout=timeout_seconds)
 
-            process = subprocess.run(command, capture_output=True, text=True, check=False, timeout=timeout_seconds) # Adicionado timeout
-
-            stdout = process.stdout
-            stderr = process.stderr
             returncode = process.returncode
 
             print("DEBUG: Resultado bruto do Dirb (primeiros 200 chars):", stdout[:200])
@@ -44,14 +52,13 @@ class DirbGuardian:
 
 
             # TODO: Implementar o parsing real da saída do Dirb aqui
-            # Parsing agora é possível porque a saída é capturada novamente.
             parsed_data = {
                 "target": target,
                 "options": options,
-                "stdout_summary": stdout.splitlines()[:10], # Primeiras 10 linhas do stdout
-                "stderr_summary": stderr.splitlines()[:10], # Primeiras 10 linhas do stderr
-                 # Você precisará analisar o 'stdout' para extrair os diretórios/arquivos encontrados
-                "files_found_count": stdout.count('+'), # Contagem simples baseada em '+ ' nas linhas de saída
+                "returncode_dirb": returncode,
+                "files_found_count": stdout.count('+'), # Contagem simples baseada em '+ '
+                "stdout_summary": stdout.splitlines()[:10], # Primeiras 10 linhas
+                "stderr_summary": stderr.splitlines()[:10], # Primeiras 10 linhas
             }
 
 
@@ -70,19 +77,42 @@ class DirbGuardian:
             print("Erro: O comando 'dirb' não foi encontrado. Certifique-se de que o Dirb está instalado e no PATH.")
             return {"target": target, "options": options, "command_executed": ' '.join(command), "status": "error", "error_message": "Comando Dirb não encontrado"}
         except subprocess.TimeoutExpired:
-            print(f"Erro: O comando Dirb excedeu o tempo limite ({timeout_seconds} segundos). Ele pode ter travado ao capturar a saída.")
-            # Tenta retornar o output capturado até o timeout, se houver
-            # process.stdout e process.stderr podem estar disponíveis mesmo com TimeoutExpired
-            stdout_partial = process.stdout if 'process' in locals() else None
-            stderr_partial = process.stderr if 'process' in locals() else None
+            print(f"Erro: O comando Dirb excedeu o tempo limite ({timeout_seconds} segundos) durante a comunicação.")
+            # Tenta obter o output que pode ter sido capturado até o timeout
+            stdout_partial, stderr_partial = None, None
+            if process:
+                try:
+                    # communicate() já tentou ler, mas pode haver saída em buffer
+                    # Tenta obter qualquer output que ainda possa estar nos pipes
+                    stdout_partial = process.stdout.read() if process.stdout else None
+                    stderr_partial = process.stderr.read() if process.stderr else None
+                except Exception as comm_err:
+                     print(f"Aviso: Erro ao obter saída após timeout: {comm_err}")
+                finally:
+                     # Garante que o processo é encerrado se ainda estiver rodando
+                     if process and process.poll() is None:
+                         try:
+                             process.kill()
+                         except Exception as kill_err:
+                             print(f"Aviso: Erro ao matar processo Dirb: {kill_err}")
+
+
             return {
                 "target": target, "options": options, "command_executed": ' '.join(command),
-                "status": "timeout_error", "error_message": "Comando Dirb excedeu o tempo limite.",
+                "status": "timeout_error", "error_message": f"Comando Dirb excedeu o tempo limite ({timeout_seconds}s).",
                 "stdout_partial": stdout_partial, "stderr_partial": stderr_partial
             }
         except Exception as e:
-            print(f"Ocorreu um erro ao executar o Dirb: {e}")
+            print(f"Ocorreu um erro ao executar o Dirb (via Popen/communicate): {e}")
+            # Mata o processo se ele foi iniciado e ainda está rodando
+            if process and process.poll() is None:
+                 try:
+                     process.kill()
+                 except Exception as kill_err:
+                     print(f"Aviso: Erro ao matar processo Dirb: {kill_err}")
+
             return {"target": target, "options": options, "command_executed": ' '.join(command), "status": "error", "error_message": str(e)}
+
 
 # (Bloco __main__ comentado aqui)
 # if __name__ == "__main__":
