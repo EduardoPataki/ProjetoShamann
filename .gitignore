@@ -1,0 +1,13 @@
+# Ignorar arquivos de cache do Python
+__pycache__/
+*.pyc
+
+# Ignorar arquivos temporários do editor
+*~
+*.swp
+.kate-swp
+.kde4-kate-swp
+
+# Ignorar logs ou outputs específicos (se existirem depois)
+# logs/
+# output/
