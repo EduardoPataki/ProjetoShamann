@@ -24,13 +24,12 @@ except ImportError:
      nmap_guardian = None
 
 # TODO: Importar outros Guardiões
-
 # TODO: Importar módulos de core
 
 # --- Configuração do Typer (CLI) ---
 app = typer.Typer()
 
-# Exemplo de comando Typer para Whois
+# Comando Typer para Whois
 @app.command()
 def whois_scan(target: str):
     """
@@ -48,9 +47,13 @@ def whois_scan(target: str):
          print("WhoisGuardian não disponível. Não foi possível executar o scan WHOIS.")
 
 
-# Exemplo de comando Typer para Nmap
+# Comando Typer para Nmap - CORREÇÃO NESTA LINHA
 @app.command()
-def nmap_scan(target: str, options: str = typer.Option("-sV", help="Opções adicionais para o scan nmap")):
+def nmap_scan(
+    target: str,
+    # Adicionado "--options", "-o" para dizer ao Typer para aceitar estas opções da CLI
+    options: str = typer.Option("-sV", "--options", "-o", help="Opções adicionais para o scan nmap")
+):
     """
     Executa um scan Nmap para o target especificado.
     """
@@ -73,7 +76,6 @@ def execute_guardian_scan(guardian_name: str, target: str, options: str = "") ->
     """
     Executa um scan usando o Guardião especificado.
     """
-    # Mapeamento dos nomes de guardião para os métodos estáticos de execução
     guardians_map = {
         "whois": whois_guardian.WhoisGuardian.run_query if (whois_guardian and hasattr(whois_guardian, 'WhoisGuardian') and hasattr(whois_guardian.WhoisGuardian, 'run_query')) else None,
         "nmap": nmap_guardian.NmapGuardian.run_scan if (nmap_guardian and hasattr(nmap_guardian, 'NmapGuardian') and hasattr(nmap_guardian.NmapGuardian, 'run_scan')) else None,
@@ -102,17 +104,6 @@ def execute_guardian_scan(guardian_name: str, target: str, options: str = "") ->
         print(f"Erro ao executar o Guardião '{guardian_name}' através do Mestre: {e}")
         return {"status": "master_error", "error_message": f"Error executing guardian '{guardian_name}' via master: {e}"}
 
-
 # --- Ponto de Entrada Principal ---
-# Onde a aplicação começa a rodar. Typer assume o controle aqui.
-
 if __name__ == "__main__":
-    # Remova ou comente o bloco de testes diretos
-    # print("Iniciando Shamann Mestre...")
-    # print("\n--- Testes Diretos (Ativado para Depuração) ---")
-    # print("\n--- Teste Direto: Chamando Guardião Nmap ---")
-    # if nmap_guardian: ... else: ...
-
-    # --- Habilitar Typer CLI ---
-    # Esta linha passa o controle para o Typer, que analisará os argumentos da linha de comando
     app()
