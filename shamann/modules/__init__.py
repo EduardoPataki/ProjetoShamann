@@ -14,8 +14,8 @@ try:
 except ImportError:
     print("Erro ao importar nmap_guardian dentro de __init__.py")
 
-# TODO: Adicionar importações explícitas para outros guardiões aqui
-# try:
-#     from . import other_guardian
-# except ImportError:
-#     print("Erro ao importar other_guardian dentro de __init__.py")
+# TODO: Adicionar importações explícitas para outros Guardiões aqui
+try:
+    from . import dirb_guardian # Adicionado import para DirbGuardian
+except ImportError:
+    print("Erro ao importar dirb_guardian dentro de __init__.py")

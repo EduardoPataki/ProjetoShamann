@@ -3,107 +3,129 @@
 import typer
 import sys
 import os
-import subprocess
+import json # Adicionado para imprimir resultados formatados
 
-# Ajustar o sys.path (manter comentado - python -m cuida disso)
-# project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
-# if project_root not in sys.path:
-#      sys.path.append(project_root)
+# Adicionar a pasta raiz do projeto ao sys.path se necessário
+# Isso é útil ao rodar o script diretamente (não via python -m)
+# No entanto, ao rodar via 'python -m shamann.main', isso geralmente não é necessário
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+if project_root not in sys.path:
+     # sys.path.append(project_root) # Comentado, pois python -m deve gerenciar isso
 
-# Importações de Guardiões da nova localização
-try:
-    from shamann.modules import whois_guardian
-except ImportError:
-    print("Erro: Não foi possível importar o módulo whois_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe.")
-    whois_guardian = None
-
+# Tentar importar os módulos guardiões
+# Se um guardião falhar ao importar, o valor correspondente na hierarquia será None
+nmap_guardian = None
 try:
     from shamann.modules import nmap_guardian
-except ImportError:
-     print("Erro: Não foi possível importar o módulo nmap_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe.")
-     nmap_guardian = None
+except ImportError as e:
+    print(f"Erro: Não foi possível importar o módulo nmap_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
+    # sys.exit(1) # Não sair se apenas um guardião falhar
 
-# TODO: Importar outros Guardiões
-# TODO: Importar módulos de core
+whois_guardian = None
+try:
+    from shamann.modules import whois_guardian
+except ImportError as e:
+     # Este erro deve ter sido resolvido, mas mantemos a proteção
+    print(f"Erro: Não foi possível importar o módulo whois_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
+    # sys.exit(1) # Não sair se apenas um guardião falhar
 
-# --- Configuração do Typer (CLI) ---
+# TODO: Importar outros Guardiões aqui
+dirb_guardian = None # Definir como None por padrão
+try:
+    from shamann.modules import dirb_guardian # Importar o novo Guardião Dirb
+except ImportError as e:
+    print(f"Erro: Não foi possível importar o módulo dirb_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
+
+
 app = typer.Typer()
 
-# Comando Typer para Whois
+# Mapeamento das tarefas/Guardiões. O Mestre usaria isso para saber qual Guardião chamar.
+# Por enquanto, a CLI chama diretamente, mas a estrutura está aqui.
+# A chave do dicionário é o nome da tarefa (usado internamente pelo Mestre).
+# O valor é a função run_scan/run_query do Guardião correspondente,
+# ou None se o Guardião não pôde ser importado.
+guardians_map = {
+    # Verifica se o módulo importou E se a classe/função esperada existe nele
+    "nmap": nmap_guardian.NmapGuardian.run_scan if (nmap_guardian and hasattr(nmap_guardian, 'NmapGuardian') and hasattr(nmap_guardian.NmapGuardian, 'run_scan')) else None,
+    "whois": whois_guardian.WhoisGuardian.run_query if (whois_guardian and hasattr(whois_guardian, 'WhoisGuardian') and hasattr(whois_guardian.WhoisGuardian, 'run_query')) else None,
+    # TODO: Adicionar outros Guardiões ao mapa aqui
+    "dirb": dirb_guardian.DirbGuardian.run_scan if (dirb_guardian and hasattr(dirb_guardian, 'DirbGuardian') and hasattr(dirb_guardian.DirbGuardian, 'run_scan')) else None, # Adicionado Dirb
+}
+
+def execute_guardian_scan(guardian_name: str, target: str, options: str = ""):
+    """
+    Função interna que simula o Mestre chamando o Guardião apropriado.
+    """
+    guardian_function = guardians_map.get(guardian_name)
+
+    if guardian_function is None:
+        # Verifica qual guardião específico falhou a importação ou não existe
+        if guardian_name == "nmap" and nmap_guardian is None:
+             print(f"NmapGuardian não disponível. Não foi possível executar o scan Nmap.")
+        elif guardian_name == "whois" and whois_guardian is None:
+             print(f"WhoisGuardian não disponível. Não foi possível executar o scan WHOIS.")
+        # TODO: Adicionar checks para outros Guardiões aqui
+        elif guardian_name == "dirb" and dirb_guardian is None: # Adicionado check para Dirb
+             print(f"DirbGuardian não disponível. Não foi possível executar o scan Dirb.")
+        else:
+             print(f"Guardião desconhecido ou indisponível: {guardian_name}")
+             print("Verifique se o módulo do Guardião foi importado corretamente e se a função 'run_scan' (ou equivalente) existe.")
+        return None # Retorna None ou um dicionário de erro padrão
+
+    print(f"Mestre chamando Guardião: {guardian_name} para target: {target}{' com opções: ' + options if options else ''}")
+
+    try:
+        # Executa a função do Guardião. Assume que a assinatura é target, options (nem sempre)
+        # Precisaremos refinar isso para Guardiões com assinaturas diferentes.
+        if guardian_name == "whois":
+             result = guardian_function(target=target) # WHOIS não usa options na run_query simulada
+        else:
+             result = guardian_function(target=target, options=options) # Nmap, Dirb usam target e options
+
+
+        print("\nResultado do Scan:") # Título genérico para a saída do Guardião
+        # Usa json.dumps para imprimir dicionários de forma mais legível
+        print(json.dumps(result, indent=4, default=str)) # default=str para lidar com datetime no WHOIS
+
+        return result # Retorna o resultado do Guardião
+
+    except Exception as e:
+        print(f"Ocorreu um erro durante a execução do Guardião {guardian_name}: {e}")
+        # Retorna um dicionário de erro consistente
+        return {"target": target, "guardian": guardian_name, "status": "execution_error", "error_message": str(e)}
+
+
+@app.command()
+def nmap_scan(target: str, options: str = typer.Option("", "-o", help="Opções adicionais para o Nmap, entre aspas duplas. Ex: \"-sV -p-\"")):
+    """
+    Executa um scan Nmap em um target.
+    """
+    print(f"Comando CLI recebido: nmap_scan target={target}, options={options}")
+    execute_guardian_scan("nmap", target, options)
+
+
 @app.command()
 def whois_scan(target: str):
     """
-    Executa um scan WHOIS para o target especificado.
+    Executa uma consulta WHOIS para um target.
     """
     print(f"Comando CLI recebido: whois_scan target={target}")
-    # Chamar a função de orquestração do Mestre
-    # Verificar se o guardião foi importado com sucesso antes de chamar
-    if whois_guardian and hasattr(whois_guardian, 'WhoisGuardian') and hasattr(whois_guardian.WhoisGuardian, 'run_query'):
-         result = execute_guardian_scan("whois", target)
-         print("\nResultado do Scan WHOIS:")
-         print(result)
-         # TODO: Integrar com output_manager para salvar o resultado
-    else:
-         print("WhoisGuardian não disponível. Não foi possível executar o scan WHOIS.")
+    execute_guardian_scan("whois", target) # WHOIS não precisa de options na CLI
 
 
-# Comando Typer para Nmap - CORREÇÃO NESTA LINHA
-@app.command()
-def nmap_scan(
-    target: str,
-    # Adicionado "--options", "-o" para dizer ao Typer para aceitar estas opções da CLI
-    options: str = typer.Option("-sV", "--options", "-o", help="Opções adicionais para o scan nmap")
-):
+# TODO: Adicionar comandos para outros Guardiões aqui
+@app.command() # Novo comando para o Dirb
+def dirb_scan(target: str, options: str = typer.Option("", "-o", help="Opções adicionais para o Dirb, entre aspas duplas. Ex: \"-X .php,.html\"")):
     """
-    Executa um scan Nmap para o target especificado.
+    Executa um scan Dirb em um target (URL).
     """
-    print(f"Comando CLI recebido: nmap_scan target={target}, options={options}")
-    # Chamar a função de orquestração do Mestre
-    # Verificar se o guardião foi importado com sucesso antes de chamar
-    if nmap_guardian and hasattr(nmap_guardian, 'NmapGuardian') and hasattr(nmap_guardian.NmapGuardian, 'run_scan'):
-        result = execute_guardian_scan("nmap", target, options)
-        print("\nResultado do Scan Nmap:")
-        print(result)
-        # TODO: Integrar com output_manager para salvar o resultado
-    else:
-         print("NmapGuardian não disponível. Não foi possível executar o scan Nmap.")
+    print(f"Comando CLI recebido: dirb_scan target={target}, options={options}")
+    execute_guardian_scan("dirb", target, options)
 
 
-# TODO: Adicionar comandos Typer para outros Guardiões
-
-# --- Lógica do Mestre (Orquestração) ---
-def execute_guardian_scan(guardian_name: str, target: str, options: str = "") -> dict:
-    """
-    Executa um scan usando o Guardião especificado.
-    """
-    guardians_map = {
-        "whois": whois_guardian.WhoisGuardian.run_query if (whois_guardian and hasattr(whois_guardian, 'WhoisGuardian') and hasattr(whois_guardian.WhoisGuardian, 'run_query')) else None,
-        "nmap": nmap_guardian.NmapGuardian.run_scan if (nmap_guardian and hasattr(nmap_guardian, 'NmapGuardian') and hasattr(nmap_guardian.NmapGuardian, 'run_scan')) else None,
-        # TODO: Adicionar outros guardiões
-    }
-
-    selected_guardian_func = guardians_map.get(guardian_name.lower())
-
-    if selected_guardian_func is None:
-        print(f"Erro: Guardião '{guardian_name}' não encontrado, não implementado ou com problemas de carregamento.")
-        return {"status": "error", "error_message": f"Guardian '{guardian_name}' not found or not loaded."}
-
-    print(f"Mestre chamando Guardião: {guardian_name} para target: {target}")
-    try:
-        if guardian_name.lower() == "nmap":
-             result = selected_guardian_func(target=target, options=options)
-        elif guardian_name.lower() == "whois":
-             result = selected_guardian_func(target=target)
-        else:
-             print(f"Chamada para guardião '{guardian_name}' com argumentos padrão.")
-             return {"status": "error", "error_message": f"Argument mapping not defined for guardian '{guardian_name}'"}
-
-        return result
-
-    except Exception as e:
-        print(f"Erro ao executar o Guardião '{guardian_name}' através do Mestre: {e}")
-        return {"status": "master_error", "error_message": f"Error executing guardian '{guardian_name}' via master: {e}"}
-
-# --- Ponto de Entrada Principal ---
 if __name__ == "__main__":
+    # Este é o ponto de entrada quando rodamos o script diretamente
+    # A função app() do Typer analisa os argumentos da linha de comando
+    # e chama a função @app.command apropriada.
+    # print("DEBUG: Executando main.py") # Debugging inicial
     app()
