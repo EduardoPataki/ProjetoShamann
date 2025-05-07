@@ -25,8 +25,8 @@ class WhoisGuardian:
 
         try:
             # Use a biblioteca whois (agora importada corretamente) aqui
-            # CORREÇÃO: Mudei de whois.get_whois() para whois.WHOIS()
-            details = whois.WHOIS(target)
+            # TENTATIVA: Mudei de whois.WHOIS() para whois.whois() (lowercase)
+            details = whois.whois(target)
             return {
                 "target": target,
                 "status": "completed",
