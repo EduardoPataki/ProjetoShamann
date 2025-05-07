@@ -1,31 +1,11 @@
-# shamann/modules/__init__.py
+# shamann/main.py
 
-# Este arquivo é necessário para que Python reconheça o diretório como um pacote.
-# Ele também permite importações relativas dentro deste pacote.
+# --- Código MÍNIMO para Teste de Execução Básica ---
 
-# Podemos usar este arquivo para facilitar a importação de módulos e classes
-# dos guardiões diretamente do pacote shamann.modules.
+import sys
+import os
 
-# Por exemplo, em vez de:
-# from shamann.modules.whois_guardian import WhoisGuardian
-# poderíamos fazer:
-# from shamann.modules import WhoisGuardian
-# se adicionarmos a linha:
-# from .whois_guardian import WhoisGuardian
+print(">>> DEBUG MÍNIMO: Script executando! Se você vê esta linha, o básico funciona. <<<")
 
-# Importação explícita dos guardiões para facilitar o acesso
-try:
-    from .whois_guardian import WhoisGuardian
-except ImportError:
-    # O arquivo whois_guardian.py ou a classe WhoisGuardian não existe
-    pass
-
-# Tentamos importar nmap_guardian se existir no pacote atual
-try:
-    from .nmap_guardian import NmapGuardian
-except ImportError:
-    # O arquivo nmap_guardian.py ou a classe NmapGuardian não existe no pacote atual
-    pass
-
-# Você pode adicionar outras importações de guardiões aqui no futuro
-# Ex: from .dirb_guardian import DirbGuardian
+# Não há mais nada aqui. Sem blocos if __name__ == "__main__":, sem funções, sem Typer, sem Guardiões.
+# Apenas imports básicos e um print no topo do arquivo.
