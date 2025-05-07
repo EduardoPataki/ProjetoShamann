@@ -1,3 +1,7 @@
+# Ignorar pastas de ambiente virtual
+venv/
+.venv/
+
 # Ignorar arquivos de cache do Python
 __pycache__/
 *.pyc
@@ -11,3 +15,6 @@ __pycache__/
 # Ignorar logs ou outputs específicos (se existirem depois)
 # logs/
 # output/
+
+# Ignorar a pasta modules/ na raiz do projeto (se ela ainda existir)
+# modules/
