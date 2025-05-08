@@ -21,3 +21,4 @@ typing_extensions==4.13.2 # Pode ser uma dependência de outras libs, bom ter
 zipp==3.21.0 # Pode ser uma dependência de outras libs, bom ter
 typer>=0.9.0
 python-whois
+requests

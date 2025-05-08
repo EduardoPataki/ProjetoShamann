@@ -1,142 +1,173 @@
 # shamann/main.py
 
-import typer
+import argparse
 import sys
-import os
-import json # Adicionado para imprimir resultados formatados
+import json
+# Importar os Guardiões via o pacote modules
+from shamann.modules import GUARDIANS
 
-# Adicionar a pasta raiz do projeto ao sys.path se necessário
-# Isso é útil ao rodar o script diretamente (não via python -m)
-# No entanto, ao rodar via 'python -m shamann.main', isso geralmente não é necessário
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-if project_root not in sys.path:
-     # sys.path.append(project_root) # Comentado, pois python -m deve gerenciar isso
-     pass # Explicitamente não fazer nada se o caminho não for adicionado
-
-# Tentar importar os módulos guardiões
-# Se um guardião falhar ao importar, o valor correspondente na hierarquia será None
-
-try:
-    from shamann.modules import nmap_guardian
-except ImportError as e:
-    print(f"Erro: Não foi possível importar o módulo nmap_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
-    nmap_guardian = None # Atribuir None aqui se a importação falhar
-
-
-try:
-    from shamann.modules import whois_guardian
-except ImportError as e:
-     # Este erro deve ter sido resolvido, mas mantemos a proteção
-    print(f"Erro: Não foi possível importar o módulo whois_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
-    whois_guardian = None # Atribuir None aqui se a importação falhar
-
-
-# TODO: Importar outros Guardiões aqui
-try:
-    from shamann.modules import dirb_guardian # Importar o novo Guardião Dirb
-except ImportError as e:
-    print(f"Erro: Não foi possível importar o módulo dirb_guardian. Certifique-se que está em shamann/modules/ e que __init__.py existe. Detalhes: {e}")
-    dirb_guardian = None # Atribuir None aqui se a importação falhar
-
-
-app = typer.Typer()
-
-# Mapeamento das tarefas/Guardiões. O Mestre usaria isso para saber qual Guardião chamar.
-# Por enquanto, a CLI chama diretamente, mas a estrutura está aqui.
-# A chave do dicionário é o nome da tarefa (usado internamente pelo Mestre).
-# O valor é a função run_scan/run_query do Guardião correspondente,
-# ou None se o Guardião não pôde ser importado.
-guardians_map = {
-    # Verifica se o módulo importou E se a classe/função esperada existe nele
-    # Acesso seguro usando getattr e operador ternário
-    "nmap": getattr(nmap_guardian, 'NmapGuardian', None) and getattr(nmap_guardian.NmapGuardian, 'run_scan', None),
-    "whois": getattr(whois_guardian, 'WhoisGuardian', None) and getattr(whois_guardian.WhoisGuardian, 'run_query', None),
-    # TODO: Adicionar outros Guardiões ao mapa aqui
-    "dirb": getattr(dirb_guardian, 'DirbGuardian', None) and getattr(dirb_guardian.DirbGuardian, 'run_scan', None), # Adicionado Dirb
-}
-
-def execute_guardian_scan(guardian_name: str, target: str, options: str = ""):
+class Mestre:
     """
-    Função interna que simula o Mestre chamando o Guardião apropriado.
+    O Mestre (Master) do framework Shamann.
+    Orquestra os Guardiões e a interação via CLI.
     """
-    guardian_function = guardians_map.get(guardian_name)
 
-    if guardian_function is None:
-        # Verifica qual guardião específico falhou a importação ou não existe
-        # Melhorar a verificação para ser mais genérica se possível
-        if guardian_name == "nmap" and nmap_guardian is None:
-             print(f"NmapGuardian não disponível (erro de importação). Não foi possível executar o scan Nmap.")
-        elif guardian_name == "whois" and whois_guardian is None:
-             print(f"WhoisGuardian não disponível (erro de importação). Não foi possível executar o scan WHOIS.")
-        # TODO: Adicionar checks para outros Guardiões aqui
-        elif guardian_name == "dirb" and dirb_guardian is None: # Adicionado check para Dirb
-             print(f"DirbGuardian não disponível (erro de importação). Não foi possível executar o scan Dirb.")
-        # Verifica se o módulo importou mas a classe/função esperada não foi encontrada
-        elif guardian_name == "nmap" and not getattr(nmap_guardian, 'NmapGuardian', None):
-             print(f"NmapGuardian indisponível (Classe NmapGuardian ou função run_scan não encontrada).")
-        elif guardian_name == "whois" and not getattr(whois_guardian, 'WhoisGuardian', None):
-             print(f"WhoisGuardian indisponível (Classe WhoisGuardian ou função run_query não encontrada).")
-        elif guardian_name == "dirb" and not getattr(dirb_guardian, 'DirbGuardian', None):
-             print(f"DirbGuardian indisponível (Classe DirbGuardian ou função run_scan não encontrada).")
+    @staticmethod
+    def execute_scan(guardian_name: str, target: str, options: str = "") -> dict:
+        """
+        Localiza o Guardião apropriado e executa o scan.
+        """
+        print(f"Mestre chamando Guardião: {guardian_name} para target: {target} com opções: {options}")
+        if guardian_name in GUARDIANS:
+            guardian_class = GUARDIANS[guardian_name]
+            # Instanciar e rodar o Guardião. Os Guardiões devem ter um método run_scan estático.
+            # Assumimos que run_scan retorna um dicionário com os resultados.
+            try:
+                results = guardian_class.run_scan(target, options)
+                return results
+            except Exception as e:
+                print(f"Erro ao executar o Guardião {guardian_name}: {e}", file=sys.stderr)
+                # Opcional: Imprimir traceback completo para depuração
+                # import traceback
+                # traceback.print_exc()
+                return {
+                    "target": target,
+                    "guardian": guardian_name,
+                    "status": "error",
+                    "error_message": str(e)
+                }
         else:
-             print(f"Guardião desconhecido ou indisponível: {guardian_name}")
-             print("Verifique se o módulo do Guardião foi importado corretamente e se a função 'run_scan' (ou equivalente) existe.")
-        return None # Retorna None ou um dicionário de erro padrão
-
-    print(f"Mestre chamando Guardião: {guardian_name} para target: {target}{' com opções: ' + options if options else ''}")
-
-    try:
-        # Executa a função do Guardião. Assume que a assinatura é target, options (nem sempre)
-        # Precisaremos refinar isso para Guardiões com assinaturas diferentes.
-        if guardian_name == "whois":
-             result = guardian_function(target=target) # WHOIS não usa options na run_query simulada
-        else:
-             result = guardian_function(target=target, options=options) # Nmap, Dirb usam target e options
+            print(f"Erro: Guardião '{guardian_name}' não encontrado.", file=sys.stderr)
+            return {
+                "target": target,
+                "guardian": guardian_name,
+                "status": "error",
+                "error_message": f"Guardião '{guardian_name}' não encontrado."
+            }
 
 
-        print("\nResultado do Scan:") # Título genérico para a saída do Guardião
-        # Usa json.dumps para imprimir dicionários de forma mais legível
-        print(json.dumps(result, indent=4, default=str)) # default=str para lidar com datetime no WHOIS
+    @staticmethod
+    def parse_cli():
+        """
+        Analisa os argumentos da linha de comando e dispara as ações.
+        """
+        # Cria o parser principal
+        parser = argparse.ArgumentParser(description="Shamann - Pentest Automation Framework Master")
 
-        return result # Retorna o resultado do Guardião
-
-    except Exception as e:
-        print(f"Ocorreu um erro durante a execução do Guardião {guardian_name}: {e}")
-        # Retorna um dicionário de erro consistente
-        return {"target": target, "guardian": guardian_name, "status": "execution_error", "error_message": str(e)}
-
-
-@app.command()
-def nmap_scan(target: str, options: str = typer.Option("", "-o", help="Opções adicionais para o Nmap, entre aspas duplas. Ex: \"-sV -p-\"")):
-    """
-    Executa um scan Nmap em um target.
-    """
-    print(f"Comando CLI recebido: nmap_scan target={target}, options={options}")
-    execute_guardian_scan("nmap", target, options)
+        # Adiciona um argumento opcional para listar guardiões
+        parser.add_argument("--list-guardians", action="store_true", help="List available Guardians")
 
 
-@app.command()
-def whois_scan(target: str):
-    """
-    Executa uma consulta WHOIS para um target.
-    """
-    print(f"Comando CLI recebido: whois_scan target={target}")
-    execute_guardian_scan("whois", target) # WHOIS não precisa de options na CLI
+        # Cria subparsers para os diferentes comandos
+        subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+        # Subparser para nmap-scan
+        nmap_parser = subparsers.add_parser("nmap-scan", help="Perform an Nmap scan.")
+        nmap_parser.add_argument("target", help="Target for Nmap scan.")
+        nmap_parser.add_argument("-o", "--options", default="", help="Additional Nmap options as a single string.")
+        # nmap_parser.set_defaults(func=Mestre.execute_scan, guardian_name="nmap") # Vamos lidar com a execução aqui
+
+        # Subparser para whois-lookup
+        whois_parser = subparsers.add_parser("whois-lookup", help="Perform a WHOIS lookup.")
+        whois_parser.add_argument("target", help="Target for WHOIS lookup.")
+        # whois_parser.set_defaults(func=Mestre.execute_scan, guardian_name="whois") # Vamos lidar com a execução aqui
+
+        # Subparser para dirb-scan (mantido, mas pode ser removido ou apontar para dirfuzz)
+        # dirb_parser = subparsers.add_parser("dirb-scan", help="Perform a Dirb scan (using external dirb binary, may be unstable).")
+        # dirb_parser.add_argument("target", help="Target for Dirb scan.")
+        # dirb_parser.add_argument("-o", "--options", default="", help="Additional Dirb options as a single string.")
+
+        # Subparser para dirfuzz-scan (NOVO)
+        dirfuzz_parser = subparsers.add_parser("dirfuzz-scan", help="Perform directory fuzzing using internal requests-based tool.")
+        dirfuzz_parser.add_argument("target", help="Target URL (e.g., http://example.com)")
+        dirfuzz_parser.add_argument("-w", "--wordlist", required=True, help="Path to wordlist file")
+        dirfuzz_parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads (default: 10)")
 
 
-# TODO: Adicionar comandos para outros Guardiões aqui
-@app.command() # Novo comando para o Dirb
-def dirb_scan(target: str, options: str = typer.Option("", "-o", help="Opções adicionais para o Dirb, entre aspas duplas. Ex: \"-X .php,.html\"")):
-    """
-    Executa um scan Dirb em um target (URL).
-    """
-    print(f"Comando CLI recebido: dirb_scan target={target}, options={options}")
-    execute_guardian_scan("dirb", target, options)
+        args = parser.parse_args()
+
+        # Se --list-guardians foi usado, imprimir a lista e sair
+        if args.list_guardians:
+            print("Guardiões Disponíveis:")
+            # Garantir que o import de GUARDIANS ocorreu sem erro
+            if GUARDIANS is not None:
+                for name in GUARDIANS.keys():
+                    print(f"- {name}")
+            else:
+                print("Erro: Não foi possível carregar a lista de Guardiões.")
+            return # Sair após listar
+
+        if not hasattr(args, 'command') or args.command is None:
+            parser.print_help()
+            return
 
 
+        # Processa o comando e chama o Guardião apropriado
+        # Removendo 'func' e 'guardian_name' da impressão se existirem
+        arg_dict = vars(args)
+        # Criar uma cópia para evitar modificar o dicionário durante a iteração se necessário
+        arg_print_dict = {k:v for k,v in arg_dict.items() if k not in ['command', 'func']}
+        print(f"Comando CLI recebido: {args.command} " + ", ".join([f"{k}={v}" for k,v in arg_print_dict.items()]))
+
+
+        try:
+            if args.command == "nmap-scan":
+                guardian_name = "nmap"
+                target = args.target
+                options = args.options
+                results = Mestre.execute_scan(guardian_name, target, options)
+                print("\nResultado do Scan:")
+                print(json.dumps(results, indent=4))
+
+            elif args.command == "whois-lookup":
+                guardian_name = "whois"
+                target = args.target
+                options = "" # WHOIS não tem opções de linha de comando complexas neste ponto
+                results = Mestre.execute_scan(guardian_name, target, options)
+                print("\nResultado do Scan:")
+                print(json.dumps(results, indent=4))
+
+            # Opcional: Lógica para o antigo dirb-scan se mantido
+            # elif args.command == "dirb-scan":
+            #     print("Aviso: O comando 'dirb-scan' pode ser instável. Considere usar 'dirfuzz-scan'.")
+            #     guardian_name = "dirb" # Manter para fins de demonstração/documentação
+            #     target = args.target
+            #     options = args.options
+            #     results = Mestre.execute_scan(guardian_name, target, options)
+            #     print("\nResultado do Scan:")
+            #     print(json.dumps(results, indent=4))
+
+
+            # Lógica para o NOVO comando dirfuzz-scan
+            elif args.command == "dirfuzz-scan":
+                guardian_name = "dirfuzz"
+                target = args.target
+                # Montar a string de opções no formato que o DirFuzzGuardian espera
+                # baseado nos argumentos separados do parser
+                # Citar o caminho da wordlist caso contenha espaços
+                options = f"-w \"{args.wordlist}\" -t {args.threads}"
+
+                results = Mestre.execute_scan(guardian_name, target, options)
+                print("\nResultado do Scan:")
+                print(json.dumps(results, indent=4))
+
+
+            # Adicionar mais comandos elif aqui para outros Guardiões futuros
+
+            else:
+                # Isso não deve acontecer se subparsers estiver configurado corretamente,
+                # mas é uma segurança. O argparse já cuida da maioria dos casos.
+                print(f"Erro: Comando '{args.command}' não reconhecido.", file=sys.stderr)
+                parser.print_help()
+
+
+        except Exception as e:
+            print(f"\nOcorreu um erro geral durante a execução do comando: {e}", file=sys.stderr)
+            # Opcional: Imprimir traceback completo para depuração em caso de erro inesperado no Mestre
+            # import traceback
+            # traceback.print_exc()
+
+
+# Bloco principal para execução
 if __name__ == "__main__":
-    # Este é o ponto de entrada quando rodamos o script diretamente
-    # A função app() do Typer analisa os argumentos da linha de comando
-    # e chama a função @app.command apropriada.
-    # print("DEBUG: Executando main.py") # Debugging inicial
-    app()
+    Mestre.parse_cli()
