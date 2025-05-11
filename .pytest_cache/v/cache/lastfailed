@@ -1,0 +1,3 @@
+{
+  "tests/test_whois_guardian.py::TestWhoisGuardian::test_run_query_success": true
+}

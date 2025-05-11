@@ -1,0 +1,5 @@
+[
+  "tests/test_mestre.py::TestMestre::test_execute_scan_invalid_guardian",
+  "tests/test_mestre.py::TestMestre::test_execute_scan_whois",
+  "tests/test_whois_guardian.py::TestWhoisGuardian::test_run_query_success"
+]

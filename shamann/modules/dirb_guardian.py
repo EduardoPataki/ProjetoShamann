@@ -1,3 +1,6 @@
+import subprocess
+from .base_guardian import BaseGuardian
+
 # shamann/modules/dirb_guardian.py
 
 import sys

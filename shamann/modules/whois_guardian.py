@@ -1,51 +1,34 @@
 # shamann/modules/whois_guardian.py
-
-# Você pode remover estas importações se não forem usadas
 import subprocess
-import sys
+from .base_guardian import BaseGuardian
 
-# Importar a biblioteca Whois real - IMPORT CORRIGIDA
-import whois # Importa a biblioteca usando o nome correto do módulo instalado
+import whois
 
 class WhoisGuardian:
-    """
-    Guardião responsável por interagir com a ferramenta WHOIS.
-    """
-
     @staticmethod
-    def run_query(target: str) -> dict:
-        """
-        Executa uma consulta WHOIS para um target e retorna os resultados.
-        """
-        print(f"DEBUG: WHOIS Guardian run_query iniciado para {target}")
-
-        # --- Lógica real de consulta WHOIS ---
-        # Certifique-se de que 'python-whois' está no seu requirements.txt
-        # e que você rodou 'pip install -r requirements.txt'
-
+    def run_scan(target: str, options: str = "") -> dict:
         try:
-            # Use a biblioteca whois (agora importada corretamente) aqui
-            # TENTATIVA: Mudei de whois.WHOIS() para whois.whois() (lowercase)
-            details = whois.whois(target)
+            whois_data = WhoisGuardian.perform_whois_lookup(target)
             return {
                 "target": target,
-                "status": "completed",
-                "raw_whois_data": details, # 'details' é um dicionário/objeto retornado pela lib
-                # TODO: Adicionar parsing mais aprofundado de 'details' se necessário
-                "parsed_data": details # Por enquanto, retorne os detalhes brutos também como "parsed"
+                "guardian": "whois",
+                "status": "success",
+                "whois_data": whois_data
             }
         except Exception as e:
-            print(f"Erro na consulta WHOIS: {e}")
-            return {"target": target, "status": "error", "error_message": str(e)}
+            return {
+                "target": target,
+                "guardian": "whois",
+                "status": "error",
+                "error_message": str(e)
+            }
 
-        # --- REMOVA ou COMENTE O BLOCO ABAIXO para usar a lógica acima ---
-        # return {
-        #     "target": target,
-        #     "status": "completed_simulated",
-        #     "raw_whois_data": f"Resultados WHOIS simulados para {target}",
-        #     "parsed_data": {"domain": target, "registrar": "Simulado"}
-        # }
+    @staticmethod
+    def perform_whois_lookup(target: str) -> str:
+        result = whois.whois(target)
+        return str(result)
 
-# (Bloco __main__ comentado aqui)
-# if __name__ == "__main__":
-#    pass # Este guardião não é o ponto de entrada principal
+    @staticmethod
+    def run_query(target: str) -> str:
+        """Interface direta usada pelos testes unitários"""
+        return WhoisGuardian.perform_whois_lookup(target)
