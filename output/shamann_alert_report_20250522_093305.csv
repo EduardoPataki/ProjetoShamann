@@ -1,0 +1,6 @@
+Nivel,Tipo,IP,Hostname,OS,Porta,Protocolo,Servico,Versao_Servico,Descricao_Alerta,Recomendacao
+INFO,Nenhum Alerta Direto,192.168.178.1,fritz.box,Linux 3.2 - 4.14,N/A,N/A,N/A,N/A,"Host online e escaneado, sem alertas de prioridade detectados.",
+INFO,Sistema Operacional Não Identificado,192.168.178.165,N/A,N/A,N/A,N/A,N/A,N/A N/A,Sistema Operacional do host 192.168.178.165 não pôde ser identificado pelo Nmap.,"Investigar manualmente o host. Pode ser um dispositivo IoT obscuro, roteador, ou um firewall."
+INFO,Sistema Operacional Não Identificado,192.168.178.24,kali.fritz.box,N/A,N/A,N/A,N/A,N/A N/A,Sistema Operacional do host 192.168.178.24 não pôde ser identificado pelo Nmap.,"Investigar manualmente o host. Pode ser um dispositivo IoT obscuro, roteador, ou um firewall."
+INFO,Nenhum Alerta Direto,192.168.178.36,TL-WA850RE.fritz.box,Canon imageRUNNER C5185 printer or Mercusys AC12G WAP,N/A,N/A,N/A,N/A,"Host online e escaneado, sem alertas de prioridade detectados.",
+INFO,Sistema Operacional Não Identificado,192.168.178.49,iPad.fritz.box,N/A,N/A,N/A,N/A,N/A N/A,Sistema Operacional do host 192.168.178.49 não pôde ser identificado pelo Nmap.,"Investigar manualmente o host. Pode ser um dispositivo IoT obscuro, roteador, ou um firewall."

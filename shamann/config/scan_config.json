@@ -1,0 +1,61 @@
+{
+    "scan_profile": {
+        "name": "full_network_discovery",
+        "description": "Scan completo para descoberta de rede, OS, serviços e dispositivos IoT.",
+        "target": "192.168.178.0/24",
+        "nmap_options": "-sS -sV -O -A -T4",
+        "ports": "1-1000",
+        "include_default_scripts": true,
+        "custom_scripts": []
+    },
+    "alert_rules": [
+        {
+            "level": "CRITICAL",
+            "type": "Serviço Inseguro Exposto (Telnet)",
+            "condition": "service_name == 'telnet' and state == 'open'",
+            "description": "Serviço Telnet aberto. Inseguro, credenciais são transmitidas em texto claro.",
+            "recommendation": "Desabilitar Telnet e usar SSH para acesso remoto seguro."
+        },
+        {
+            "level": "CRITICAL",
+            "type": "Serviço Inseguro Exposto (FTP Anônimo)",
+            "condition": "service_name == 'ftp' and 'anonymous' in extrainfo_lower",
+            "description": "Servidor FTP com acesso anônimo. Risco de acesso não autorizado e exfiltração de dados.",
+            "recommendation": "Desabilitar acesso anônimo, usar SFTP/FTPS e garantir permissões corretas."
+        },
+        {
+            "level": "HIGH",
+            "type": "Câmera IP / Dispositivo de Vídeo Exposto",
+            "condition": "(service_name == 'http' or service_name == 'https') and ('webcam' in product_lower or 'camera' in product_lower or 'ipcam' in cpe_lower or 'video-surveillance' in cpe_lower)",
+            "description": "Serviço web de câmera/vídeo detectado. Risco de exposição de vídeo.",
+            "recommendation": "Verificar credenciais padrão, desabilitar acesso externo, atualizar firmware e monitorar acessos."
+        },
+        {
+            "level": "MEDIUM",
+            "type": "Serviço MQTT Exposto (IoT)",
+            "condition": "service_name == 'mqtt' or port_id == 1883 or port_id == 8883",
+            "description": "Serviço MQTT detectado, comum em dispositivos IoT. Pode ser um robô de limpeza, assistente virtual, etc.",
+            "recommendation": "Verificar segurança do MQTT, desabilitar acesso externo, proteger com autenticação e TLS."
+        },
+        {
+            "level": "INFO",
+            "type": "Sistema Operacional Não Identificado",
+            "condition": "os_match == 'N/A' and status == 'up'",
+            "description": "Sistema Operacional do host não pôde ser identificado pelo Nmap. Pode indicar um dispositivo incomum ou firewall.",
+            "recommendation": "Investigar manualmente o host para identificar o SO."
+        },
+        {
+            "level": "LOW",
+            "type": "Serviço Desconhecido em Porta Aberta",
+            "condition": "state == 'open' and service_name == 'N/A'",
+            "description": "Porta aberta com serviço não identificado. Pode ser um serviço proprietário ou desconhecido.",
+            "recommendation": "Investigar manualmente o serviço nesta porta. Verifique logs do host."
+        }
+    ],
+    "output_settings": {
+        "report_format": ["csv", "json"],
+        "csv_filename_prefix": "shamann_alert_report",
+        "json_filename_prefix": "shamann_scan_details",
+        "output_directory": "./output"
+    }
+}

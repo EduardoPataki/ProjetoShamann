@@ -1,0 +1,148 @@
+{
+    "scan_time": "2025-05-22T09:33:05.548274",
+    "hosts": [
+        {
+            "ip_address": "192.168.178.1",
+            "hostname": "fritz.box",
+            "status": "up",
+            "os_match": "Linux 3.2 - 4.14",
+            "os_accuracy": "100",
+            "vendor": "Unknown",
+            "ports": [
+                {
+                    "port_id": 53,
+                    "protocol": "tcp",
+                    "state": "open",
+                    "service_name": "domain",
+                    "service_product": "NLnet Labs NSD",
+                    "service_version": "",
+                    "extrainfo": "",
+                    "cpe": "cpe:/a:nlnetlabs:nsd",
+                    "scripts": {}
+                },
+                {
+                    "port_id": 80,
+                    "protocol": "tcp",
+                    "state": "open",
+                    "service_name": "http",
+                    "service_product": "FRITZ!Box http config",
+                    "service_version": "",
+                    "extrainfo": "",
+                    "cpe": "",
+                    "scripts": {
+                        "http-title": "      FRITZ!Box  ",
+                        "http-robots.txt": "1 disallowed entry \n/"
+                    }
+                },
+                {
+                    "port_id": 443,
+                    "protocol": "tcp",
+                    "state": "open",
+                    "service_name": "http",
+                    "service_product": "FRITZ!Box http config",
+                    "service_version": "",
+                    "extrainfo": "",
+                    "cpe": "",
+                    "scripts": {
+                        "http-robots.txt": "1 disallowed entry \n/",
+                        "ssl-cert": "Subject: commonName=muakpvmc6xn87a8k.myfritz.net\nSubject Alternative Name: DNS:muakpvmc6xn87a8k.myfritz.net, DNS:fritz.box, DNS:www.fritz.box, DNS:fritzbox.internal, DNS:fritzbox.home.arpa, DNS:myfritz.box, DNS:www.myfritz.box, DNS:fritz.nas, DNS:www.fritz.nas\nNot valid before: 1970-01-01T00:00:36\nNot valid after:  2038-01-16T00:00:36",
+                        "http-title": "      FRITZ!Box  ",
+                        "ssl-date": "TLS randomness does not represent time"
+                    }
+                }
+            ],
+            "alerts": []
+        },
+        {
+            "ip_address": "192.168.178.165",
+            "hostname": "N/A",
+            "status": "up",
+            "os_match": "N/A",
+            "os_accuracy": "N/A",
+            "vendor": "Unknown",
+            "ports": [],
+            "alerts": [
+                {
+                    "level": "INFO",
+                    "type": "Sistema Operacional Não Identificado",
+                    "description": "Sistema Operacional do host 192.168.178.165 não pôde ser identificado pelo Nmap.",
+                    "recommendation": "Investigar manualmente o host. Pode ser um dispositivo IoT obscuro, roteador, ou um firewall.",
+                    "details": {}
+                }
+            ]
+        },
+        {
+            "ip_address": "192.168.178.24",
+            "hostname": "kali.fritz.box",
+            "status": "up",
+            "os_match": "N/A",
+            "os_accuracy": "N/A",
+            "vendor": "N/A",
+            "ports": [],
+            "alerts": [
+                {
+                    "level": "INFO",
+                    "type": "Sistema Operacional Não Identificado",
+                    "description": "Sistema Operacional do host 192.168.178.24 não pôde ser identificado pelo Nmap.",
+                    "recommendation": "Investigar manualmente o host. Pode ser um dispositivo IoT obscuro, roteador, ou um firewall.",
+                    "details": {}
+                }
+            ]
+        },
+        {
+            "ip_address": "192.168.178.36",
+            "hostname": "TL-WA850RE.fritz.box",
+            "status": "up",
+            "os_match": "Canon imageRUNNER C5185 printer or Mercusys AC12G WAP",
+            "os_accuracy": "95",
+            "vendor": "Unknown",
+            "ports": [
+                {
+                    "port_id": 22,
+                    "protocol": "tcp",
+                    "state": "open",
+                    "service_name": "ssh",
+                    "service_product": "Cisco/3com IPSSHd",
+                    "service_version": "6.6.0",
+                    "extrainfo": "protocol 2.0",
+                    "cpe": "",
+                    "scripts": {
+                        "ssh-hostkey": "\n  512 ae:b0:36:11:7d:c2:16:c9:65:64:6a:69:b4:71:f3:7b (DSA)"
+                    }
+                },
+                {
+                    "port_id": 80,
+                    "protocol": "tcp",
+                    "state": "open",
+                    "service_name": "http",
+                    "service_product": "TP-LINK router http config",
+                    "service_version": "",
+                    "extrainfo": "",
+                    "cpe": "",
+                    "scripts": {
+                        "http-title": "Opening..."
+                    }
+                }
+            ],
+            "alerts": []
+        },
+        {
+            "ip_address": "192.168.178.49",
+            "hostname": "iPad.fritz.box",
+            "status": "up",
+            "os_match": "N/A",
+            "os_accuracy": "N/A",
+            "vendor": "Unknown",
+            "ports": [],
+            "alerts": [
+                {
+                    "level": "INFO",
+                    "type": "Sistema Operacional Não Identificado",
+                    "description": "Sistema Operacional do host 192.168.178.49 não pôde ser identificado pelo Nmap.",
+                    "recommendation": "Investigar manualmente o host. Pode ser um dispositivo IoT obscuro, roteador, ou um firewall.",
+                    "details": {}
+                }
+            ]
+        }
+    ]
+}

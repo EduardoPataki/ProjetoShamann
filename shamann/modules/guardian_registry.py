@@ -1,50 +1,66 @@
-"""
-Este módulo registra os Guardiões disponíveis para o framework Shamann.
-Ele busca automaticamente todos os arquivos *_guardian.py, importa as classes herdadas de BaseGuardian
-e registra no dicionário GUARDIANS, mapeando nomes CLI para as respectivas classes.
-"""
+# shamann/modules/guardian_registry.py
 
-import os
-import importlib
-import inspect
-from pathlib import Path
-from .base_guardian import BaseGuardian
-from .shamann_guardian import ShamannGuardian
+# Importe as classes de Guardiões.
+# Note: Você importou NmapGuardian duas vezes na versão que enviou, removi a duplicação.
+from .nmap_guardian import NmapGuardian
+from .dirb_guardian import DirbGuardian
+from .dirfuzz_guardian import DirFuzzGuardian
+from .dns_guardian import DNSGuardian
+from .whois_guardian import WhoisGuardian
+from .shamann_guardian import ShamannGuardian # Assumindo que este é o componente de alertas/decisão
+from .example_guardian import ExampleGuardian
 
-GUARDIAN_REGISTRY = {
-    # outros guardiões...
-    "shamann": ShamannGuardian,
-}
+# Lista central de guardiões registrados:
+# Formato: (nome, classe, ativo?)
+GUARDIAN_CLASSES = [
+    ("nmap", NmapGuardian, True),
+    ("dirb", DirbGuardian, True),
+    ("dirfuzz", DirFuzzGuardian, True),
+    ("dns", DNSGuardian, True),
+    ("whois", WhoisGuardian, True),
+    ("shamann", ShamannGuardian, True),  # Ativado por padrão (componente de alerta/decisão?)
+    ("example", ExampleGuardian, False), # Exemplo desativado
+]
 
+# --- ADIÇÃO: Crie o dicionário GUARDIANS para acesso direto por nome ---
+# Este dicionário incluirá apenas os guardiões marcados como ativos em GUARDIAN_CLASSES
+# O Mestre e outros módulos podem usar este dicionário para obter a classe de um Guardião pelo seu nome.
+GUARDIANS = {name: cls for name, cls, active in GUARDIAN_CLASSES if active}
 
-# Dicionário global de guardiões registrados
-GUARDIANS = {}
+# --- Opcional: Se precisar de um dicionário com TODOS os guardiões (ativos ou não)
+# ALL_GUARDIANS_DICT = {name: cls for name, cls, active in GUARDIAN_CLASSES}
 
-def load_guardians():
+# --- Funções que você já tinha (nomes ajustados para maior clareza) ---
+
+def get_active_guardian_classes(): # Nome ajustado para maior clareza
     """
-    Carrega dinamicamente todos os guardiões disponíveis no diretório atual.
-    Arquivos válidos devem terminar com _guardian.py e conter uma subclasse de BaseGuardian.
+    Retorna uma lista das classes de guardiões ativos.
     """
-    current_dir = Path(__file__).parent
-    for file in os.listdir(current_dir):
-        if file.endswith("_guardian.py") and file != "base_guardian.py":
-            module_name = file[:-3]  # remove .py
-            module_path = f"{__package__}.{module_name}"
+    return [cls for name, cls, active in GUARDIAN_CLASSES if active]
 
-            try:
-                module = importlib.import_module(module_path)
-            except Exception as e:
-                print(f"[!] Erro ao importar {module_path}: {e}")
-                continue
 
-            for name, obj in inspect.getmembers(module, inspect.isclass):
-                if issubclass(obj, BaseGuardian) and obj is not BaseGuardian:
-                    try:
-                        guardian_name = obj.name()
-                        if guardian_name:
-                            GUARDIANS[guardian_name] = obj
-                            print(f"[✓] Guardião registrado: {guardian_name}")
-                        else:
-                            print(f"[!] Classe {name} não retornou nome válido.")
-                    except Exception as e:
-                        print(f"[!] Erro ao obter nome do guardião {name}: {e}")
+def get_all_guardian_info(): # Nome ajustado para maior clareza
+    """
+    Retorna uma lista de dicionários com informações (nome, classe, ativo) de todos os guardiões.
+    """
+    return [
+        {
+            "name": name,
+            "class": cls,
+            "active": active
+        }
+        for name, cls, active in GUARDIAN_CLASSES
+    ]
+
+
+def get_guardian_by_name(name: str):
+    """
+    Retorna a classe de um guardião ATIVO pelo nome usando o dicionário GUARDIANS.
+    Retorna None se o guardião não for encontrado ou não estiver ativo.
+    """
+    # Use o dicionário GUARDIANS criado acima para uma busca eficiente apenas entre os ativos.
+    return GUARDIANS.get(name)
+
+# Note: A importação 'from ... import load_guardians' no seu main.py não corresponde a nenhuma função aqui.
+# Se a função load_guardians não existe ou não é necessária neste arquivo, você deve removê-la do import no main.py.
+# Se load_guardians era para popular o dicionário GUARDIANS, a adição acima já faz isso de forma estática.

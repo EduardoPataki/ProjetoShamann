@@ -1,13 +1,12 @@
 import os
 import subprocess
-import shutil
-import time
+from datetime import datetime
 from .base_guardian import BaseGuardian
-from ..system_tools import SystemTools  # Arquivo que conterá utilitários auxiliares
+
 
 class ShamannGuardian(BaseGuardian):
     """
-    Guardião Shamann: responsável por manter e proteger o ambiente Kali Linux
+    Guardião Shamann: responsável pela manutenção e defesa do ecossistema do Kali Linux.
     """
 
     @classmethod
@@ -17,32 +16,45 @@ class ShamannGuardian(BaseGuardian):
     @classmethod
     def run_scan(cls, target: str = "", options: str = "") -> dict:
         """
-        Executa rotinas de pré-pentest (manutenção) ou defesa ativa com base nas opções
-        Ex: --mode precheck | --mode defend
+        Executa uma checagem completa do sistema.
         """
-        result = {"status": "success", "executed_tasks": []}
-
-        mode = options.strip().lower()
-
         try:
-            if mode == "--mode precheck":
-                result["executed_tasks"].append(SystemTools.clean_temp_files())
-                result["executed_tasks"].append(SystemTools.verify_disk_usage())
-                result["executed_tasks"].append(SystemTools.sync_time())
-                result["executed_tasks"].append(SystemTools.check_dependencies())
-                result["executed_tasks"].append(SystemTools.create_backup())
-
-            elif mode == "--mode defend":
-                result["executed_tasks"].append(SystemTools.activate_firewall())
-                result["executed_tasks"].append(SystemTools.start_network_monitor())
-                result["executed_tasks"].append(SystemTools.launch_honeypot())
-
-            else:
-                result["status"] = "error"
-                result["error_message"] = "Modo inválido. Use --mode precheck ou --mode defend"
-
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "check_disk": cls.check_disk_usage(),
+                "clear_trash": cls.clear_temp_files(),
+                "apt_update": cls.run_apt_update(),
+                "status": "success"
+            }
         except Exception as e:
-            result["status"] = "error"
-            result["error_message"] = str(e)
+            return {
+                "status": "error",
+                "error_message": str(e)
+            }
 
-        return result
+    @staticmethod
+    def check_disk_usage() -> str:
+        result = subprocess.run(["df", "-h", "/"], capture_output=True, text=True)
+        return result.stdout.strip()
+
+    @staticmethod
+    def clear_temp_files() -> str:
+        try:
+            subprocess.run(["rm", "-rf", "/tmp/*", "/var/tmp/*"], check=True)
+            return "🧹 Temp folders cleaned."
+        except subprocess.CalledProcessError as e:
+            return f"Erro ao limpar pastas temporárias: {e}"
+
+    @staticmethod
+    def run_apt_update() -> str:
+        try:
+            subprocess.run(["apt", "update", "-y"], capture_output=True, text=True, check=True)
+            subprocess.run(["apt", "upgrade", "-y"], capture_output=True, text=True, check=True)
+            return "📦 Sistema atualizado com apt."
+        except subprocess.CalledProcessError as e:
+            return f"Erro ao atualizar sistema: {e}"
+
+    @staticmethod
+    def detect_intrusions() -> str:
+        # Placeholder: Integrar com Fail2Ban, auditd ou ferramentas de detecção
+        return "🔐 Monitoramento de intrusões ainda não implementado."
